@@ -35,7 +35,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-// Auth 지속성 관리 (앱을 껐다 켜도 로그인 유지)
+// Auth 지속성 관리 (앱 재시작 시 로그인 유지)
 let auth;
 try {
     auth = initializeAuth(app, { persistence: getReactNativePersistence(ReactNativeAsyncStorage) });
@@ -44,7 +44,7 @@ try {
 }
 const db = getFirestore(app);
 
-// 날짜 포맷 함수
+// 날짜 포맷 함수 (YYYY-MM-DD)
 const formatYMD = (dateString) => {
     const d = new Date(dateString);
     const year = d.getFullYear();
@@ -120,66 +120,35 @@ export default function App() {
 
     // --- 2. Google 로그인 Hook ---
     const [request, response, promptAsync] = Google.useAuthRequest({
-        expoClientId: 'YOUR_EXPO_CLIENT_ID', // 여기에 실제 클라이언트 ID가 필요할 수 있습니다.
+        expoClientId: 'YOUR_EXPO_CLIENT_ID', // 실제 ID가 필요하면 입력
         iosClientId: 'YOUR_IOS_CLIENT_ID',
         androidClientId: 'YOUR_ANDROID_CLIENT_ID',
         webClientId: '377490408598-3e191glg4spq104v4o0kc25ftt3ih190.apps.googleusercontent.com',
     });
 
-    // ★ [추가됨] Access Token으로 유저 정보 직접 가져오기 (id_token 없을 때 대비)
-    const fetchUserInfo = async (token) => {
-        try {
-            const res = await fetch("https://www.googleapis.com/userinfo/v2/me", {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            const userFromGoogle = await res.json();
-
-            // Firebase Auth 객체 형식을 흉내내어 상태 업데이트
-            setUser({
-                uid: userFromGoogle.id, // 구글 ID를 UID로 사용
-                email: userFromGoogle.email,
-                displayName: userFromGoogle.name,
-                photoURL: userFromGoogle.picture
-            });
-            showToast("구글 로그인 성공!");
-        } catch (error) {
-            console.error("User Info Error:", error);
-            Alert.alert("로그인 실패", "사용자 정보를 가져오는데 실패했습니다.");
-        }
-    };
-
-    // ★ [수정됨] 응답 처리 로직
+    // ★ [핵심] 구글 로그인 응답 처리 (Access Token으로 정식 로그인)
     useEffect(() => {
         if (response?.type === 'success') {
             const { id_token, access_token } = response.params;
 
-            if (id_token) {
-                // 1. id_token이 있으면 Firebase 정식 로그인 시도
-                const credential = GoogleAuthProvider.credential(id_token);
-                signInWithCredential(auth, credential)
-                    .then(() => showToast("구글 로그인 성공!"))
-                    .catch((error) => Alert.alert("로그인 실패", error.message));
-            } else if (access_token) {
-                // 2. id_token은 없지만 access_token이 있으면 직접 정보 조회
-                console.log("id_token 없음. access_token으로 유저 정보 조회 시도...");
-                fetchUserInfo(access_token);
-            } else {
-                console.log("토큰이 없습니다.");
-            }
+            // id_token이 없으면 access_token을 사용하여 자격증명 생성
+            const credential = GoogleAuthProvider.credential(id_token || null, access_token || null);
+
+            signInWithCredential(auth, credential)
+                .then((userCredential) => {
+                    showToast("구글 로그인 성공!");
+                })
+                .catch((error) => {
+                    console.error("Login Failed:", error);
+                    Alert.alert("로그인 실패", error.message);
+                });
         }
     }, [response]);
 
     // --- Firebase Auth 리스너 ---
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (u) => {
-            // 구글 로그인으로 수동 설정된 경우 덮어쓰지 않도록 주의
-            if (u) {
-                setUser(u);
-            } else {
-                // 로그아웃 상태일 때만 null 처리 (수동 로그인 유지를 위해)
-                // 만약 Firebase 로그아웃을 명확히 할 때는 이 로직이 맞음
-                // setUser(null);
-            }
+            setUser(u);
             if (initializing) setInitializing(false);
         });
         return () => unsubscribe();
@@ -189,6 +158,8 @@ export default function App() {
     useEffect(() => {
         if (!user || !user.uid) return;
         setTodos([]);
+
+        // 웹과 동일한 경로(user.uid) 사용
         const q = query(collection(db, "users", user.uid, "todos"), where("date", "==", selectedDate), orderBy("startTime", "asc"));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             setTodos(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
@@ -220,7 +191,6 @@ export default function App() {
         setTimeout(() => setToastVisible(false), 2500);
     };
 
-    // --- 로그인 화면 애니메이션 (Flip) ---
     const flipToSignup = () => {
         Animated.spring(flipAnim, { toValue: 180, friction: 8, tension: 10, useNativeDriver: true }).start();
         setIsLoginMode(false);
@@ -230,7 +200,6 @@ export default function App() {
         setIsLoginMode(true);
     };
 
-    // --- 로그인/회원가입 핸들러 ---
     const handleAuth = async () => {
         const cleanEmail = email.trim();
         const cleanPassword = password.trim();
@@ -268,11 +237,9 @@ export default function App() {
         promptAsync();
     };
 
-    // --- 로그아웃 핸들러 ---
     const handleLogout = async () => {
         try {
-            await signOut(auth); // Firebase 로그아웃
-            setUser(null); // 강제 상태 초기화 (구글 로그인 사용자를 위해)
+            await signOut(auth);
         } catch (e) {
             console.error(e);
         }
@@ -340,15 +307,31 @@ export default function App() {
         try { await updateDoc(doc(db, "users", user.uid, "todos", item.id), { isDone: !item.isDone }); } catch(e){}
     };
 
+    // ★ [수정됨] 삭제 핸들러 (웹/앱 호환)
     const deleteTodo = async (id) => {
+        // 1. 웹(브라우저) 환경일 경우
+        if (Platform.OS === 'web') {
+            const ok = window.confirm("정말 삭제하시겠습니까?");
+            if (ok) {
+                setTodos(prev => prev.filter(t => t.id !== id));
+                showToast("삭제되었습니다.");
+                if (id.toString().startsWith('temp-')) return;
+                try { await deleteDoc(doc(db, "users", user.uid, "todos", id)); } catch(e) { console.error(e); }
+            }
+            return;
+        }
+
+        // 2. 모바일 앱(Android/iOS) 환경일 경우
         Alert.alert("삭제", "정말 삭제하시겠습니까?", [
             { text: "취소" },
-            { text: "삭제", style: "destructive", onPress: async () => {
+            {
+                text: "삭제", style: "destructive", onPress: async () => {
                     setTodos(prev => prev.filter(t => t.id !== id));
                     showToast("삭제되었습니다.");
                     if (id.toString().startsWith('temp-')) return;
-                    try { await deleteDoc(doc(db, "users", user.uid, "todos", id)); } catch(e){}
-                }}
+                    try { await deleteDoc(doc(db, "users", user.uid, "todos", id)); } catch(e) { console.error(e); }
+                }
+            }
         ]);
     };
 
@@ -374,12 +357,10 @@ export default function App() {
 
     if (initializing) return <View style={styles.loadingCenter}><ActivityIndicator size="large" color="#4A90E2" /></View>;
 
-    // ★ [로그인 화면] 3D Flip 적용
     if (!user) return (
         <LinearGradient colors={['#F5F7FA', '#c3cfe2']} style={styles.authContainer}>
             <StatusBar barStyle="dark-content" />
             <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{width: '90%', alignItems: 'center', height: 600}}>
-                {/* 앞면: 로그인 */}
                 <Animated.View style={[styles.authCard, styles.flipCard, { transform: [{ rotateY: frontInterpolate }], opacity: frontOpacity }]}>
                     <View style={styles.authHeader}>
                         <Text style={styles.logoText}>📅 Todo Master</Text>
@@ -389,7 +370,6 @@ export default function App() {
                     <TextInput style={styles.input} placeholder="비밀번호" value={password} onChangeText={setPassword} secureTextEntry />
                     <TouchableOpacity style={styles.primaryBtn} onPress={handleAuth}><Text style={styles.primaryBtnText}>로그인</Text></TouchableOpacity>
 
-                    {/* ★ Google 로그인 버튼 */}
                     <TouchableOpacity style={styles.googleBtn} onPress={handleGoogleLogin}>
                         <AntDesign name="google" size={20} color="#DB4437" style={{marginRight:10}}/>
                         <Text style={styles.googleBtnText}>Google 계정으로 로그인</Text>
@@ -401,7 +381,6 @@ export default function App() {
                     </View>
                 </Animated.View>
 
-                {/* 뒷면: 회원가입 */}
                 <Animated.View style={[styles.authCard, styles.flipCard, styles.cardBack, { transform: [{ rotateY: backInterpolate }], opacity: backOpacity }]}>
                     <View style={styles.authHeader}>
                         <Text style={[styles.logoText, {color:'#764ba2'}]}>✨ 회원가입</Text>
@@ -420,7 +399,6 @@ export default function App() {
         </LinearGradient>
     );
 
-    // ★ [메인 화면]
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" />
@@ -429,7 +407,6 @@ export default function App() {
                     <Text style={styles.headerTitle}>Todo Master</Text>
                     <Text style={styles.headerSub}>{user.email ? user.email.split('@')[0] : "게스트"}님</Text>
                 </View>
-                {/* 로그아웃 버튼 수정 */}
                 <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
                     <MaterialIcons name="logout" size={18} color="#555" />
                     <Text style={styles.logoutText}>로그아웃</Text>
@@ -504,7 +481,6 @@ export default function App() {
                 <Ionicons name="add" size={30} color="white" />
             </TouchableOpacity>
 
-            {/* 모달 (일정 추가/수정) */}
             <Modal visible={modalVisible} animationType="slide" transparent={true}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
