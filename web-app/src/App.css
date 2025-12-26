@@ -1,0 +1,202 @@
+/* 기본 폰트 및 배경 설정 */
+body {
+    margin: 0;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+    background: #f4f6f9;
+    color: #333;
+}
+
+/* =========================================
+   1. 레이아웃 & 공통 스타일
+   ========================================= */
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 1400px;
+    margin: 0 auto;
+    background: white;
+    box-shadow: 0 0 30px rgba(0,0,0,0.05);
+}
+
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 30px;
+    border-bottom: 1px solid #eee;
+    align-items: center;
+    background: white;
+    z-index: 10;
+}
+
+.logo-area h2 { margin: 0; color: #4A90E2; font-size: 22px; font-weight: 800; }
+.user-badge { font-size: 13px; color: #888; margin-left: 10px; background: #f5f5f5; padding: 4px 8px; border-radius: 12px; }
+
+.view-mode-tabs { display: flex; background: #f0f2f5; padding: 4px; border-radius: 8px; gap: 4px; }
+.view-mode-tabs button { border: none; background: none; padding: 6px 12px; font-size: 13px; font-weight: 600; color: #666; cursor: pointer; border-radius: 6px; }
+.view-mode-tabs button.active { background: white; color: #4A90E2; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+.logout-btn { background: #f8f9fa; border: 1px solid #eee; padding: 8px 16px; border-radius: 8px; cursor: pointer; color: #555; display: flex; align-items: center; gap: 6px; font-size: 13px; transition: 0.2s; }
+.logout-btn:hover { background: #ffe3e3; color: #d6336c; border-color: #ffe3e3; }
+
+.main-content { display: flex; flex: 1; overflow: hidden; }
+.left-panel { width: 320px; padding: 25px; background: #fafafa; border-right: 1px solid #eee; display: flex; flex-direction: column; gap: 20px; }
+.right-panel { flex: 1; padding: 30px 50px; display: flex; flex-direction: column; overflow-y: auto; background: #fff; }
+
+
+/* =========================================
+   2. ★ [핵심] 3D Flip 로그인/회원가입 애니메이션
+   이 부분이 수정되었습니다.
+   ========================================= */
+.auth-container {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    perspective: 1000px; /* 3D 공간감 */
+}
+
+/* 카드 컨테이너 (고정 크기 필수) */
+.flip-card {
+    background-color: transparent;
+    width: 400px;  /* 너비 고정 */
+    height: 580px; /* 높이 고정 (충분히 확보) */
+    position: relative;
+}
+
+/* 내부 회전체 */
+.flip-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.8s cubic-bezier(0.4, 0.2, 0.2, 1);
+    transform-style: preserve-3d; /* 3D 자식 요소 유지 */
+}
+
+/* 뒤집혔을 때 회전 */
+.flip-card.flipped .flip-card-inner {
+    transform: rotateY(180deg);
+}
+
+/* 앞면/뒷면 공통 (겹치기 위해 absolute 필수) */
+.auth-card-face {
+    position: absolute; /* ★ 중요: 서로 겹치게 만듦 */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden; /* 사파리 호환 */
+    backface-visibility: hidden; /* 뒷면 숨김 */
+    background: white;
+    padding: 50px 40px;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+/* 앞면 (로그인) */
+.auth-front {
+    z-index: 2;
+    transform: rotateY(0deg);
+}
+
+/* 뒷면 (회원가입) - 미리 180도 돌려놓음 */
+.auth-back {
+    transform: rotateY(180deg);
+    z-index: 1;
+}
+
+/* Auth 내부 요소 스타일 */
+.auth-card-face h1 { margin-bottom: 5px; color: #4A90E2; font-size: 28px; }
+.auth-back h1 { color: #764ba2; }
+.auth-card-face p { margin-bottom: 30px; color: #888; font-size: 15px; }
+.auth-card-face input { width: 100%; padding: 15px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; background: #f9f9f9; font-size: 15px; }
+.auth-card-face input:focus { border-color: #4A90E2; outline: none; background: white; }
+
+.primary-btn { width: 100%; padding: 15px; background: #4A90E2; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 15px; font-size: 16px; transition: 0.2s; }
+.primary-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(74, 144, 226, 0.3); }
+
+.google-btn { width: 100%; padding: 12px; background: white; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 500; font-size: 15px; color: #555; transition: 0.2s; }
+.google-btn:hover { background: #f5f5f5; }
+
+.toggle-link { margin-top: 25px; color: #4A90E2; cursor: pointer; font-size: 14px; text-decoration: underline; font-weight: 600; }
+.toggle-link:hover { color: #357abd; }
+
+
+/* =========================================
+   3. 캘린더 및 리스트 스타일
+   ========================================= */
+.react-calendar { border: none !important; border-radius: 15px; padding: 10px; width: 100% !important; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.03); font-family: inherit; }
+.react-calendar__tile--active { background: #4A90E2 !important; border-radius: 8px; color: white !important; }
+.react-calendar__tile--now { background: #eef6ff; border-radius: 8px; }
+.react-calendar__tile { height: 45px; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; padding-top: 5px !important; }
+.dot-marker { width: 4px; height: 4px; background-color: #ff5e57; border-radius: 50%; margin-top: 3px; }
+
+.my-calendars { margin-top: 20px; }
+.my-calendars h4 { margin: 0 0 10px 0; color: #555; font-size: 14px; }
+.calendar-item { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 8px 0; color: #666; cursor: pointer; }
+.calendar-item .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+.list-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 25px; border-bottom: 2px solid #f7f7f7; padding-bottom: 15px; }
+.date-display h3 { margin: 0; font-size: 26px; color: #222; }
+.day-label { font-size: 14px; color: #888; font-weight: 500; }
+.header-actions { display: flex; gap: 12px; }
+.search-box { position: relative; }
+.search-box input { padding: 10px 35px 10px 15px; border-radius: 8px; border: 1px solid #ddd; outline: none; font-size: 14px; width: 180px; transition: width 0.3s; }
+.search-box input:focus { width: 220px; border-color: #4A90E2; }
+.search-icon { position: absolute; right: 12px; top: 12px; color: #aaa; }
+.add-fab { background: #4A90E2; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 700; box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3); transition: 0.2s; }
+.add-fab:hover { background: #357abd; transform: translateY(-1px); }
+
+.todo-list { display: flex; flex-direction: column; gap: 12px; }
+.empty-state { text-align: center; color: #ccc; margin-top: 50px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.todo-item { display: flex; align-items: center; background: white; padding: 16px; border-radius: 12px; border: 1px solid #eee; transition: all 0.2s; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+.todo-item:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); border-color: #e0e0e0; }
+.todo-item.done { background: #fcfcfc; opacity: 0.6; }
+.todo-item.done .todo-title { text-decoration: line-through; color: #bbb; }
+.checkbox-area { padding: 5px 15px 5px 0; cursor: pointer; }
+.custom-checkbox { width: 22px; height: 22px; border: 2px solid #ddd; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: white; transition: 0.2s; }
+.custom-checkbox.checked { background: #4CD964; border-color: #4CD964; }
+
+.todo-content { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.todo-meta { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.time-badge { color: #888; font-weight: 600; display: flex; align-items: center; gap: 4px; background: #f5f5f5; padding: 2px 6px; border-radius: 4px; }
+.meta-icon { color: #888; }
+.todo-title { font-size: 16px; font-weight: 600; color: #333; }
+.todo-sub-info { font-size: 12px; color: #888; display: flex; gap: 10px; }
+.todo-memo { font-size: 13px; color: #777; margin-top: 2px; }
+.delete-btn-mini { background: none; border: none; color: #eee; cursor: pointer; font-size: 16px; padding: 8px; transition: 0.2s; }
+.todo-item:hover .delete-btn-mini { color: #ff4d4f; }
+
+/* 모달 */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; z-index: 100; backdrop-filter: blur(3px); }
+.modal-content { background: white; padding: 30px; border-radius: 16px; width: 450px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); max-height: 90vh; animation: slideUp 0.3s ease-out; }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.modal-scroll-area { overflow-y: auto; padding-right: 5px; display: flex; flex-direction: column; gap: 12px; }
+.section-title { font-size: 13px; font-weight: bold; color: #4A90E2; display: flex; align-items: center; gap: 5px; margin-top: 10px; border-bottom: 1px solid #f0f0f0; padding-bottom: 5px; }
+.input-title { font-size: 18px; font-weight: bold; padding: 12px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
+.input-line { padding: 10px; border: 1px solid #eee; border-radius: 8px; outline: none; font-size: 14px; }
+.select-box { padding: 10px; border: 1px solid #eee; border-radius: 8px; outline: none; background: white; flex: 1; }
+.form-row { display: flex; flex-direction: column; gap: 8px; }
+.row-2 { flex-direction: row; gap: 10px; align-items: center; }
+.time-inputs { display: flex; gap: 5px; align-items: center; flex: 2; }
+.time-inputs input { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 8px; }
+.input-memo { height: 60px; resize: none; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; font-family: inherit; }
+.file-upload-box { border: 1px dashed #ccc; padding: 15px; text-align: center; border-radius: 8px; color: #888; font-size: 13px; cursor: pointer; transition: 0.2s; }
+.file-upload-box:hover { background: #f9f9f9; border-color: #4A90E2; color: #4A90E2; }
+.category-select, .priority-select { display: flex; gap: 5px; flex: 2; }
+.category-select button, .priority-select button { flex: 1; padding: 8px; border: 1px solid #eee; background: white; border-radius: 6px; cursor: pointer; font-size: 12px; transition: 0.2s; }
+.category-select button:hover, .priority-select button:hover { background: #f9f9f9; }
+.category-select button.selected, .priority-select button.selected { background: #333; color: white; border-color: #333; font-weight: bold; }
+.modal-actions { display: flex; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; }
+.modal-actions button { flex: 1; padding: 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 15px; }
+.modal-actions .cancel { background: #f0f0f0; color: #555; }
+.modal-actions .save { background: #4A90E2; color: white; }
+
+.toast-message { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(50px); background: #333; color: white; padding: 12px 24px; border-radius: 30px; opacity: 0; transition: 0.3s; font-size: 14px; font-weight: bold; pointer-events: none; z-index: 200; }
+.toast-message.show { opacity: 1; transform: translateX(-50%) translateY(0); }

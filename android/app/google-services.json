@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "377490408598",
+    "project_id": "todo-calendar-app-dc2d8",
+    "storage_bucket": "todo-calendar-app-dc2d8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:377490408598:android:bd72ead99035cefcf12eb7",
+        "android_client_info": {
+          "package_name": "com.jbnu.todo_calendar_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "377490408598-678r4l5r0d5gp323eulidrkqhjvqrfei.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.jbnu.todo_calendar_app",
+            "certificate_hash": "1b5bdd270fbe7cd7c261b55f914a766d4087353b"
+          }
+        },
+        {
+          "client_id": "377490408598-3e191glg4spq104v4o0kc25ftt3ih190.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAA5xlMukQTdL1adQfR0xds7EKLvm47Lts"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "377490408598-3e191glg4spq104v4o0kc25ftt3ih190.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
